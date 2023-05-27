@@ -1,0 +1,83 @@
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
+
+public class ECommerceAPI {
+    public static void main(String[] args) throws IOException {
+        // Membuat instance HttpServer pada port 8059
+        HttpServer server = HttpServer.create(new InetSocketAddress(8059), 0);
+
+        // Menambahkan context untuk setiap endpoint API
+        server.createContext("/users", new UsersHandler());
+        server.createContext("/users/{id}/products", new UserProductsHandler());
+        server.createContext("/users/{id}/orders", new UserOrdersHandler());
+        server.createContext("/users/{id}/reviews", new UserReviewsHandler());
+        server.createContext("/orders/{id}", new OrderHandler());
+        server.createContext("/products", new ProductsHandler());
+        server.createContext("/products/{id}", new ProductHandler());
+
+        // Menjalankan server
+        server.start();
+        System.out.println("Server started on port 8059");
+    }
+
+    // Handler untuk endpoint /users
+    static class UsersHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            // Implementasi logika untuk GET /users, POST /users, dan lainnya
+        }
+    }
+
+    // Handler untuk endpoint /users/{id}/products
+    static class UserProductsHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            // Implementasi logika untuk GET /users/{id}/products, POST /users/{id}/products, dan lainnya
+        }
+    }
+
+    // Handler untuk endpoint /users/{id}/orders
+    static class UserOrdersHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            // Implementasi logika untuk GET /users/{id}/orders, POST /users/{id}/orders, dan lainnya
+        }
+    }
+
+    // Handler untuk endpoint /users/{id}/reviews
+    static class UserReviewsHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            // Implementasi logika untuk GET /users/{id}/reviews, POST /users/{id}/reviews, dan lainnya
+        }
+    }
+
+    // Handler untuk endpoint /orders/{id}
+    static class OrderHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            // Implementasi logika untuk GET /orders/{id}, PUT /orders/{id}, dan lainnya
+        }
+    }
+
+    // Handler untuk endpoint /products
+    static class ProductsHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            // Implementasi logika untuk GET /products, POST /products, dan lainnya
+        }
+    }
+
+    // Handler untuk endpoint /products/{id}
+    static class ProductHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            // Implementasi logika untuk GET /products/{id}, PUT /products/{id}, dan lainnya
+        }
+    }
+}
