@@ -1,9 +1,12 @@
+package org.example;
 import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import com.sun.net.httpserver.HttpContext;
+import java.sql.Connection;
+import java.sql.SQLException;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -11,7 +14,7 @@ import java.net.InetSocketAddress;
 import java.sql.*;
 
 public class ECommerceAPI {
-    private static final String API_KEY = "YOUR_API_KEY"; // Ganti dengan API key Anda
+    private static final String API_KEY = "Firman"; // Ganti dengan API key Anda
     private static final int PORT = 8059;
 
     public static void main(String[] args) throws Exception {
@@ -289,10 +292,9 @@ public class ECommerceAPI {
     }
 
     private static void sendResponse(HttpExchange exchange, int statusCode, String response) throws IOException {
-        exchange.sendResponseHeaders(statusCode, response.length());
+        exchange.sendResponseHeaders(statusCode, response.getBytes().length);
         OutputStream outputStream = exchange.getResponseBody();
         outputStream.write(response.getBytes());
-        outputStream.flush();
         outputStream.close();
     }
 }
