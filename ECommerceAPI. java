@@ -12,7 +12,7 @@ import java.sql.*;
 
 public class ECommerceAPI {
     private static final String API_KEY = "YOUR_API_KEY"; // Ganti dengan API key Anda
-    private static final int PORT = 8039;
+    private static final int PORT = 8059;
 
     public static void main(String[] args) throws Exception {
         HttpServer server = HttpServer.create(new InetSocketAddress(PORT), 0);
