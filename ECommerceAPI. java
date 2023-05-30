@@ -1,4 +1,6 @@
 package org.example;
+
+
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -15,15 +17,21 @@ import java.sql.*;
 
 public class ECommerceAPI {
     private static final String API_KEY = "Firman"; // Ganti dengan API key Anda
-    private static final int PORT = 8059;
+    private static final int PORT = 8078;
 
     public static void main(String[] args) throws Exception {
-        HttpServer server = HttpServer.create(new InetSocketAddress(PORT), 0);
-        HttpContext context = server.createContext("/");
-        context.setHandler(ECommerceAPI::handleRequest);
-        server.start();
-        System.out.println("Server started on port " + PORT);
+        try {
+            // Kode utama aplikasi
+            HttpServer server = HttpServer.create(new InetSocketAddress(PORT), 0);
+            HttpContext context = server.createContext("/");
+            context.setHandler(ECommerceAPI::handleRequest);
+            server.start();
+            System.out.println("Server started on port " + PORT);
+        } catch (Exception e) {
+            e.printStackTrace(System.err);
+        }
     }
+
 
     private static void handleRequest(HttpExchange exchange) throws IOException {
         String requestMethod = exchange.getRequestMethod();
@@ -43,6 +51,7 @@ public class ECommerceAPI {
                     JSONArray usersArray = getUsersFromDatabase();
                     sendResponse(exchange, 200, usersArray.toString());
                 } catch (SQLException e) {
+                    System.err.println("Error getting users from database: " + e.getMessage());
                     sendResponse(exchange, 500, "Internal Server Error");
                 }
             } else if (requestURI.matches("/users/\\d+")) {
@@ -147,8 +156,9 @@ public class ECommerceAPI {
             while (resultSet.next()) {
                 JSONObject userObject = new JSONObject();
                 userObject.put("id", resultSet.getInt("id"));
-                userObject.put("name", resultSet.getString("name"));
-                // Menambahkan informasi lain yang relevan
+                userObject.put("name", resultSet.getString("first_name")+ " " + resultSet.getString("last_name"));
+                userObject.put("email", resultSet.getString("email"));
+                userObject.put("phoneNumber", resultSet.getString("phone_number"));
                 usersArray.put(userObject);
             }
         }
@@ -163,7 +173,9 @@ public class ECommerceAPI {
                 if (resultSet.next()) {
                     JSONObject userObject = new JSONObject();
                     userObject.put("id", resultSet.getInt("id"));
-                    userObject.put("name", resultSet.getString("name"));
+                    userObject.put("name", resultSet.getString("first_name")+ " " + resultSet.getString("last_name"));
+                    userObject.put("email", resultSet.getString("email"));
+                    userObject.put("phoneNumber", resultSet.getString("phone_number"));
                     // Menambahkan informasi lain yang relevan
                     return userObject;
                 }
@@ -175,14 +187,16 @@ public class ECommerceAPI {
     private static JSONArray getUserProductsFromDatabase(int userId) throws SQLException {
         JSONArray productsArray = new JSONArray();
         try (Connection connection = SQLiteConnector.getConnection();
-             PreparedStatement statement = connection.prepareStatement("SELECT * FROM products WHERE user_id = ?")) {
+             PreparedStatement statement = connection.prepareStatement("SELECT * FROM products WHERE seller = ?")) {
             statement.setInt(1, userId);
             try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
                     JSONObject productObject = new JSONObject();
                     productObject.put("id", resultSet.getInt("id"));
-                    productObject.put("name", resultSet.getString("name"));
-                    // Menambahkan informasi lain yang relevan
+                    productObject.put("title", resultSet.getString("title"));
+                    productObject.put("description", resultSet.getString("description"));
+                    productObject.put("price", resultSet.getString("price"));
+                    productObject.put("stock", resultSet.getInt("stock"));
                     productsArray.put(productObject);
                 }
             }
@@ -190,16 +204,21 @@ public class ECommerceAPI {
         return productsArray;
     }
 
+
     private static JSONArray getUserOrdersFromDatabase(int userId) throws SQLException {
         JSONArray ordersArray = new JSONArray();
         try (Connection connection = SQLiteConnector.getConnection();
-             PreparedStatement statement = connection.prepareStatement("SELECT * FROM orders WHERE user_id = ?")) {
+             PreparedStatement statement = connection.prepareStatement("SELECT * FROM orders WHERE buyer = ?")) {
             statement.setInt(1, userId);
             try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
                     JSONObject orderObject = new JSONObject();
                     orderObject.put("id", resultSet.getInt("id"));
                     orderObject.put("status", resultSet.getString("status"));
+                    orderObject.put("note", resultSet.getString("note"));
+                    orderObject.put("total", resultSet.getInt("total"));
+                    orderObject.put("discount", resultSet.getInt("discount"));
+                    orderObject.put("is_paid", resultSet.getBoolean("is_paid"));
                     // Menambahkan informasi lain yang relevan
                     ordersArray.put(orderObject);
                 }
@@ -208,16 +227,18 @@ public class ECommerceAPI {
         return ordersArray;
     }
 
+
     private static JSONArray getUserReviewsFromDatabase(int userId) throws SQLException {
         JSONArray reviewsArray = new JSONArray();
         try (Connection connection = SQLiteConnector.getConnection();
-             PreparedStatement statement = connection.prepareStatement("SELECT * FROM reviews WHERE user_id = ?")) {
+             PreparedStatement statement = connection.prepareStatement("SELECT * FROM reviews WHERE \"order\" IN (SELECT id FROM orders WHERE buyer = ?)")) {
             statement.setInt(1, userId);
             try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
                     JSONObject reviewObject = new JSONObject();
                     reviewObject.put("id", resultSet.getInt("id"));
-                    reviewObject.put("rating", resultSet.getInt("rating"));
+                    reviewObject.put("rating", resultSet.getInt("star"));
+                    reviewObject.put("description", resultSet.getString("description"));
                     // Menambahkan informasi lain yang relevan
                     reviewsArray.put(reviewObject);
                 }
@@ -235,12 +256,17 @@ public class ECommerceAPI {
                     JSONObject orderObject = new JSONObject();
                     orderObject.put("id", resultSet.getInt("id"));
                     orderObject.put("status", resultSet.getString("status"));
+                    orderObject.put("buyer", resultSet.getInt("buyer"));
+                    orderObject.put("note", resultSet.getString("note"));
+                    orderObject.put("total", resultSet.getInt("total"));
+                    orderObject.put("discount", resultSet.getInt("discount"));
+                    orderObject.put("is_paid", resultSet.getBoolean("is_paid"));
                     // Menambahkan informasi lain yang relevan
                     return orderObject;
                 }
             }
         }
-        return null;
+        return null; // Jika pesanan tidak ditemukan
     }
 
     private static JSONArray getAllProductsFromDatabase() throws SQLException {
@@ -251,13 +277,18 @@ public class ECommerceAPI {
             while (resultSet.next()) {
                 JSONObject productObject = new JSONObject();
                 productObject.put("id", resultSet.getInt("id"));
-                productObject.put("name", resultSet.getString("name"));
+                productObject.put("seller", resultSet.getInt("seller"));
+                productObject.put("title", resultSet.getString("title"));
+                productObject.put("description", resultSet.getString("description"));
+                productObject.put("price", resultSet.getString("price"));
+                productObject.put("stock", resultSet.getInt("stock"));
                 // Menambahkan informasi lain yang relevan
                 productsArray.put(productObject);
             }
         }
         return productsArray;
     }
+
 
     private static JSONObject getProductFromDatabase(int productId) throws SQLException {
         try (Connection connection = SQLiteConnector.getConnection();
@@ -267,7 +298,11 @@ public class ECommerceAPI {
                 if (resultSet.next()) {
                     JSONObject productObject = new JSONObject();
                     productObject.put("id", resultSet.getInt("id"));
-                    productObject.put("name", resultSet.getString("name"));
+                    productObject.put("seller", resultSet.getInt("seller"));
+                    productObject.put("title", resultSet.getString("title"));
+                    productObject.put("description", resultSet.getString("description"));
+                    productObject.put("price", resultSet.getString("price"));
+                    productObject.put("stock", resultSet.getInt("stock"));
                     // Menambahkan informasi lain yang relevan
                     return productObject;
                 }
@@ -275,6 +310,7 @@ public class ECommerceAPI {
         }
         return null;
     }
+
 
     private static int extractUserId(String requestURI) {
         String[] parts = requestURI.split("/");
