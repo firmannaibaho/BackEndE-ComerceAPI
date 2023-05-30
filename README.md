@@ -69,11 +69,11 @@ Endpoint ini mengembalikan detail produk berdasarkan ID yang diberikan.
 
 Contoh URL: http://localhost:8059/products/1
 POST /products
-Endpoint ini digunakan untuk membuat produk baru.
+Endpoint ini digunakan untuk membuat produk baru. contoh formatnya adalah "{ "first_name": "Jon", "last_name": "dse", "email": "johndse@example.com", "phone_number": "123416789", "type": "Seller" }"
 
 Contoh URL: http://localhost:8059/products
 PUT /products/{id}
-Endpoint ini digunakan untuk memperbarui detail produk berdasarkan ID yang diberikan.
+Endpoint ini digunakan untuk memperbarui detail produk berdasarkan ID yang diberikan. contoh formatnya adalah "{ "first_name": "Jon", "last_name": "dse", "email": "johndse@example.com", "phone_number": "123416789", "type": "Seller" }"
 
 Contoh URL: http://localhost:8059/products/1
 DELETE /products/{id}
