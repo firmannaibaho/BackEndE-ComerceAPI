@@ -9,6 +9,10 @@ import org.json.JSONObject;
 import com.sun.net.httpserver.HttpContext;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.io.InputStreamReader;
+import java.io.BufferedReader;
+import java.nio.charset.StandardCharsets;
+import org.json.JSONException;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -143,9 +147,80 @@ public class ECommerceAPI {
             } else {
                 sendResponse(exchange, 404, "Not Found");
             }
+        }else if (requestMethod.equals("POST")) {
+            // Handle POST /users
+            try {
+                InputStreamReader isr = new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8);
+                BufferedReader br = new BufferedReader(isr);
+                String requestBody = br.readLine();
+                JSONObject userJson = new JSONObject(requestBody);
+
+                String firstName = userJson.getString("first_name");
+                String lastName = userJson.getString("last_name");
+                String email = userJson.getString("email");
+                String phoneNumber = userJson.getString("phone_number");
+                String type = userJson.getString("type");
+
+                createUserInDatabase(firstName, lastName, email, phoneNumber, type);
+
+                sendResponse(exchange, 201, "User created successfully");
+            } catch (JSONException e) {
+                sendResponse(exchange, 400, "Invalid request body");
+            } catch (SQLException e) {
+                sendResponse(exchange, 500, "Internal Server Error");
+            }
+        } else if (requestMethod.equals("PUT")) {
+            if (requestURI.matches("/users/\\d+")) {
+                // Handle PUT /users/{id}
+                try {
+                    int userId = extractUserId(requestURI);
+
+                    InputStreamReader isr = new InputStreamReader(exchange.getRequestBody(), StandardCharsets.UTF_8);
+                    BufferedReader br = new BufferedReader(isr);
+                    String requestBody = br.readLine();
+                    JSONObject userJson = new JSONObject(requestBody);
+
+                    String firstName = userJson.getString("first_name");
+                    String lastName = userJson.getString("last_name");
+                    String email = userJson.getString("email");
+                    String phoneNumber = userJson.getString("phone_number");
+                    String type = userJson.getString("type");
+
+                    updateUserInDatabase(userId, firstName, lastName, email, phoneNumber, type);
+
+                    sendResponse(exchange, 200, "User updated successfully");
+                } catch (NumberFormatException e) {
+                    sendResponse(exchange, 400, "Invalid user ID");
+                } catch (JSONException e) {
+                    sendResponse(exchange, 400, "Invalid request body");
+                } catch (SQLException e) {
+                    sendResponse(exchange, 500, "Internal Server Error");
+                }
+            } else {
+                sendResponse(exchange, 404, "Not Found");
+            }
+
+    } else if (requestMethod.equals("DELETE")) {
+            if (requestURI.matches("/users/\\d+")) {
+                // Handle DELETE /users/{id}
+                try {
+                    int userId = extractUserId(requestURI);
+
+                    deleteUserFromDatabase(userId);
+
+                    sendResponse(exchange, 200, "User deleted successfully");
+                } catch (NumberFormatException e) {
+                    sendResponse(exchange, 400, "Invalid user ID");
+                } catch (SQLException e) {
+                    sendResponse(exchange, 500, "Internal Server Error");
+                }
+            } else {
+                sendResponse(exchange, 404, "Not Found");
+            }
         } else {
             sendResponse(exchange, 405, "Method Not Allowed");
         }
+
     }
 
     private static JSONArray getUsersFromDatabase() throws SQLException {
@@ -310,6 +385,49 @@ public class ECommerceAPI {
         }
         return null;
     }
+    private static int createUserInDatabase(String firstName, String lastName, String email, String phoneNumber, String type) throws SQLException {
+        try (Connection connection = SQLiteConnector.getConnection();
+             PreparedStatement statement = connection.prepareStatement(
+                     "INSERT INTO users (first_name, last_name, email, phone_number, type) VALUES (?, ?, ?, ?, ?)",
+                     Statement.RETURN_GENERATED_KEYS)) {
+            statement.setString(1, firstName);
+            statement.setString(2, lastName);
+            statement.setString(3, email);
+            statement.setString(4, phoneNumber);
+            statement.setString(5, type);
+            statement.executeUpdate();
+
+            // Mengambil ID yang di-generate untuk pengguna baru
+            try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    return generatedKeys.getInt(1);
+                } else {
+                    throw new SQLException("Creating user failed, no ID obtained.");
+                }
+            }
+        }
+    }
+    private static void updateUserInDatabase(int userId, String firstName, String lastName, String email, String phoneNumber, String type) throws SQLException {
+        try (Connection connection = SQLiteConnector.getConnection();
+             PreparedStatement statement = connection.prepareStatement(
+                     "UPDATE users SET first_name = ?, last_name = ?, email = ?, phone_number = ?, type = ? WHERE id = ?")) {
+            statement.setString(1, firstName);
+            statement.setString(2, lastName);
+            statement.setString(3, email);
+            statement.setString(4, phoneNumber);
+            statement.setString(5, type);
+            statement.setInt(6, userId);
+            statement.executeUpdate();
+        }
+    }
+    private static void deleteUserFromDatabase(int userId) throws SQLException {
+        try (Connection connection = SQLiteConnector.getConnection();
+             PreparedStatement statement = connection.prepareStatement("DELETE FROM users WHERE id = ?")) {
+            statement.setInt(1, userId);
+            statement.executeUpdate();
+        }
+    }
+
 
 
     private static int extractUserId(String requestURI) {
