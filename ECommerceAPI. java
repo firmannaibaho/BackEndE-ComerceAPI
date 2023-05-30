@@ -1,6 +1,3 @@
-package org.example;
-
-
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -21,7 +18,7 @@ import java.sql.*;
 
 public class ECommerceAPI {
     private static final String API_KEY = "Firman"; // Ganti dengan API key Anda
-    private static final int PORT = 8078;
+    private static final int PORT = 8059;
 
     public static void main(String[] args) throws Exception {
         try {
@@ -165,6 +162,7 @@ public class ECommerceAPI {
 
                 sendResponse(exchange, 201, "User created successfully");
             } catch (JSONException e) {
+                System.err.println("Error: " + e.getMessage());
                 sendResponse(exchange, 400, "Invalid request body");
             } catch (SQLException e) {
                 sendResponse(exchange, 500, "Internal Server Error");
@@ -190,6 +188,7 @@ public class ECommerceAPI {
 
                     sendResponse(exchange, 200, "User updated successfully");
                 } catch (NumberFormatException e) {
+                    System.err.println("Error: " + e.getMessage());
                     sendResponse(exchange, 400, "Invalid user ID");
                 } catch (JSONException e) {
                     sendResponse(exchange, 400, "Invalid request body");
